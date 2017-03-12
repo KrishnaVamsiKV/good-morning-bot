@@ -1,0 +1,23 @@
+{
+  "name": "good-morning-bot",
+  "version": "1.0.0",
+  "description": "A FB Bot",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KrishnaVamsiKV/good-morning-bot.git"
+  },
+  "author": "Krishna Vamsi",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KrishnaVamsiKV/good-morning-bot/issues"
+  },
+  "homepage": "https://github.com/KrishnaVamsiKV/good-morning-bot#readme",
+  "dependencies": {
+    "bunyan": "^1.8.8",
+    "express": "^4.15.2"
+  }
+}
