@@ -1,6 +1,9 @@
 var express = require('express')
 var app = express()
+var bodyParser = require('body-parser');
+var request = require('request');
 var bunyan = require('bunyan')
+var moment = require('moment');
 var log = bunyan.createLogger({
   name: 'good-morning-bot',
   streams: [
@@ -10,6 +13,9 @@ var log = bunyan.createLogger({
     }
   ]
 });
+
+app.use(bodyParser.urlencoded({extended: false}));
+app.use(bodyParser.json());
 
 app.get('/', function (req, res) {
     log.info('Getting request')
@@ -57,6 +63,11 @@ app.post('/webhook', function (req, res) {
   }
 });
 
+setInterval(function () {
+    log.info('10 secs passed');
+    sendTextMessage(1829221834008086, 'Hi Kv, the time is ' + moment().format('h:mm:ss a'));
+}, 10 * 1000);
+
 function receivedMessage(event) {
   // Putting a stub for now, we'll expand it in the following steps
   log.info("Message data: ", event.message);
@@ -96,12 +107,31 @@ function sendGenericMessage(recipientId, messageText) {
 }
 
 function sendTextMessage(recipientId, messageText) {
+    var reply;
+
+    switch(messageText) {
+        case 'Hi':
+        case 'Hello':
+        case 'Hey':
+        case 'Hii':
+            reply = 'Hi, How are you ?';
+            break;
+
+        case 'How are you?':
+        case 'How are you':
+            reply = 'I am great \n How can I help you ?';
+            break;
+
+        default:
+            reply = messageText;
+    }
+
   var messageData = {
     recipient: {
       id: recipientId
     },
     message: {
-      text: messageText
+      text: reply
     }
   };
 

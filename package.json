@@ -17,7 +17,10 @@
   },
   "homepage": "https://github.com/KrishnaVamsiKV/good-morning-bot#readme",
   "dependencies": {
+    "body-parser": "^1.17.1",
     "bunyan": "^1.8.8",
-    "express": "^4.15.2"
+    "express": "^4.15.2",
+    "moment": "^2.17.1",
+    "request": "^2.81.0"
   }
 }
