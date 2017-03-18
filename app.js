@@ -1,10 +1,10 @@
-var express = require('express')
-var app = express()
-var bodyParser = require('body-parser');
-var request = require('request');
-var bunyan = require('bunyan')
-var moment = require('moment');
-var log = bunyan.createLogger({
+import express from 'express';
+import bodyParser from 'body-parser';
+import request from 'request';
+import bunyan from 'bunyan';
+
+const app = express();
+const log = bunyan.createLogger({
   name: 'good-morning-bot',
   streams: [
     {
@@ -14,42 +14,73 @@ var log = bunyan.createLogger({
   ]
 });
 
+function callSendAPI(messageData) {
+  request({
+    uri: 'https://graph.facebook.com/v2.6/me/messages',
+    qs: { access_token: 'EAAFIIsI0BoQBANDtZASCZC4d6Yy5XRmwE1HbIBBgxOc8c4jk3rpJNZBcYhGPuiaZAbkPVeugHHCI8UukIawDudvw5ystyQfYXO3qHemXizob6p5kKdWkZCm5yJl0R5A8dRm5TQZCCG2FpAS0IVLUxkI2Usgx0bPFASS2dTq1mBAAZDZD' },
+    method: 'POST',
+    json: messageData
+  }, function (error, response, body) {
+    if (!error && response.statusCode === 200) {
+      const recipientId = body.recipient_id;
+      const messageId = body.message_id;
+
+      log.info('Successfully sent generic message with id %s to recipient %s',
+        messageId, recipientId);
+    } else {
+      log.info('Unable to send message.');
+      log.info(response);
+      log.info(error);
+    }
+  });
+}
+
+function sendTextMessage(recipientId, messageText) {
+  const messageData = {
+    recipient: {
+      id: recipientId
+    },
+    message: {
+      text: messageText
+    }
+  };
+
+  callSendAPI(messageData);
+}
+
+function receivedMessage(event) {
+  if (event.message.text !== 'generic') {
+    sendTextMessage(event.sender.id, event.message.text);
+  }
+}
+
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
 
-app.get('/', function (req, res) {
-    log.info('Getting request')
-    res.send('Hello World!')
-})
-
-app.get('/webhook', function(req, res) {
+app.get('/webhook', (req, res) => {
   if (req.query['hub.mode'] === 'subscribe' &&
-      req.query['hub.verify_token'] === 'good_morning_bot_secret') {
-    log.info("Validating webhook");
+    req.query['hub.verify_token'] === 'good_morning_bot_secret') {
+    log.info('Validating webhook');
     res.status(200).send(req.query['hub.challenge']);
   } else {
-    log.info("Failed validation. Make sure the validation tokens match.");
+    log.info('Failed validation. Make sure the validation tokens match.');
     res.sendStatus(403);
   }
 });
 
-app.post('/webhook', function (req, res) {
-  var data = req.body;
+app.post('/webhook', (req, res) => {
+  const data = req.body;
 
   // Make sure this is a page subscription
   if (data.object === 'page') {
-
     // Iterate over each entry - there may be multiple if batched
-    data.entry.forEach(function(entry) {
-      var pageID = entry.id;
-      var timeOfEvent = entry.time;
-
+    data.entry.forEach((entry) => {
       // Iterate over each messaging event
-      entry.messaging.forEach(function(event) {
+      entry.messaging.forEach((event) => {
         if (event.message) {
           receivedMessage(event);
         } else {
-          log.info("Webhook received unknown event: ", event);
+          log.info('Webhook received unknown event: ', event);
         }
       });
     });
@@ -63,103 +94,6 @@ app.post('/webhook', function (req, res) {
   }
 });
 
-setInterval(function () {
-    log.info('10 secs passed');
-    sendTextMessage(1829221834008086, 'Hi Kv, the time is ' + moment().format('h:mm:ss a'));
-}, 10 * 1000);
-
-function receivedMessage(event) {
-  // Putting a stub for now, we'll expand it in the following steps
-  log.info("Message data: ", event.message);
-  var senderID = event.sender.id;
-  var recipientID = event.recipient.id;
-  var timeOfMessage = event.timestamp;
-  var message = event.message;
-
-  log.info("Received message for user %d and page %d at %d with message:",
-    senderID, recipientID, timeOfMessage);
-  log.info(JSON.stringify(message));
-
-  var messageId = message.mid;
-
-  var messageText = message.text;
-  var messageAttachments = message.attachments;
-
-  if (messageText) {
-
-    // If we receive a text message, check to see if it matches a keyword
-    // and send back the example. Otherwise, just echo the text we received.
-    switch (messageText) {
-      case 'generic':
-        sendGenericMessage(senderID);
-        break;
-
-      default:
-        sendTextMessage(senderID, messageText);
-    }
-  } else if (messageAttachments) {
-    sendTextMessage(senderID, "Message with attachment received");
-  }
-}
-
-function sendGenericMessage(recipientId, messageText) {
-  // To be expanded in later sections
-}
-
-function sendTextMessage(recipientId, messageText) {
-    var reply;
-
-    switch(messageText) {
-        case 'Hi':
-        case 'Hello':
-        case 'Hey':
-        case 'Hii':
-            reply = 'Hi, How are you ?';
-            break;
-
-        case 'How are you?':
-        case 'How are you':
-            reply = 'I am great \n How can I help you ?';
-            break;
-
-        default:
-            reply = messageText;
-    }
-
-  var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      text: reply
-    }
-  };
-
-  callSendAPI(messageData);
-}
-
-function callSendAPI(messageData) {
-  request({
-    uri: 'https://graph.facebook.com/v2.6/me/messages',
-    qs: { access_token: 'EAAFIIsI0BoQBANDtZASCZC4d6Yy5XRmwE1HbIBBgxOc8c4jk3rpJNZBcYhGPuiaZAbkPVeugHHCI8UukIawDudvw5ystyQfYXO3qHemXizob6p5kKdWkZCm5yJl0R5A8dRm5TQZCCG2FpAS0IVLUxkI2Usgx0bPFASS2dTq1mBAAZDZD' },
-    method: 'POST',
-    json: messageData
-
-  }, function (error, response, body) {
-    if (!error && response.statusCode == 200) {
-      var recipientId = body.recipient_id;
-      var messageId = body.message_id;
-
-      log.info("Successfully sent generic message with id %s to recipient %s",
-        messageId, recipientId);
-    } else {
-      log.info("Unable to send message.");
-      log.info(response);
-      log.info(error);
-    }
-  });
-}
-
-app.listen(3000, function () {
-    log.info('Started good morning')
-})
+app.listen(3000, () => {
+  log.info('Started good morning');
+});
