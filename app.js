@@ -2,7 +2,7 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import request from 'request';
 import bunyan from 'bunyan';
-import Understand from './Languages/English';
+import Process from './Languages/English';
 
 const app = express();
 const log = bunyan.createLogger({
@@ -42,7 +42,7 @@ function sendTextMessage(recipientId, messageText) {
       id: recipientId
     },
     message: {
-      text: Understand(messageText) || 'Sorry! I couldn\'t understand that'
+      text: Process(messageText) || 'I think I couldn\'t understand it!'
     }
   };
 
